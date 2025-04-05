@@ -19,7 +19,7 @@ impl EmbeddingType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Point {
-    pub id: String,
+    pub id: Uuid,
     pub vector: Vec<f32>,
     pub payload: HashMap<String, String>,
 }
@@ -27,13 +27,13 @@ pub struct Point {
 impl Point {
     pub fn new(vector: Vec<f32>, payload: HashMap<String, String>) -> Self {
         Self {
-            id: Uuid::new_v4().to_string(),
+            id: Uuid::new_v4(),
             vector,
             payload,
         }
     }
 
-    pub fn with_id(id: String, vector: Vec<f32>, payload: HashMap<String, String>) -> Self {
+    pub fn with_id(id: Uuid, vector: Vec<f32>, payload: HashMap<String, String>) -> Self {
         Self {
             id,
             vector,
