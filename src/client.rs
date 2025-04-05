@@ -1,4 +1,4 @@
-use picodb::{
+use pikodb::{
     collection::{Collection, CollectionData},
     embedding::{EmbeddingType, Point},
     error::VectorDbError,
@@ -105,9 +105,11 @@ impl Client {
 
     fn persist(&self) -> Result<(), VectorDbError> {
         let Some(adapter) = &self.persistence_adapter else {
-            return Err(VectorDbError::PersistenceError("No persistence adapter is configured.".to_string()))
+            return Err(VectorDbError::PersistenceError(
+                "No persistence adapter is configured.".to_string(),
+            ));
         };
-        
+
         let state = PersistedState {
             collections: self
                 .collections

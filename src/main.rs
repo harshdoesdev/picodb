@@ -1,3 +1,3 @@
 pub fn main() {
-    println!("PicoDB cli will be available soon!");
+    println!("PikoDB cli will be available soon!");
 }

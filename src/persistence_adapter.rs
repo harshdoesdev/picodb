@@ -1,4 +1,4 @@
-use picodb::{collection::CollectionData, error::VectorDbError};
+use pikodb::{collection::CollectionData, error::VectorDbError};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Read;
@@ -20,9 +20,7 @@ pub struct FsPersistenceAdapter {
 
 impl FsPersistenceAdapter {
     pub fn new(path: PathBuf) -> Self {
-        Self {
-            path
-        }
+        Self { path }
     }
 }
 

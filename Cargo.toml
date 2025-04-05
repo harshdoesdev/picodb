@@ -1,5 +1,5 @@
 [package]
-name = "picodb"
+name = "pikodb"
 version = "0.1.0"
 edition = "2021"
 

@@ -1,5 +1,5 @@
 use hnsw_rs::prelude::*;
-use picodb::{
+use pikodb::{
     embedding::{EmbeddingType, Point},
     error::VectorDbError,
 };

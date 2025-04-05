@@ -1,4 +1,4 @@
-extern crate self as picodb;
+extern crate self as pikodb;
 
 pub mod error;
 
