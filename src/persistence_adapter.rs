@@ -1,46 +1,67 @@
-use pikodb::{collection::CollectionData, error::VectorDbError};
+use pikodb::{
+    collection::CollectionData,
+    error::{PersistenceError, VectorDbError},
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::io::Read;
 use std::path::PathBuf;
-
-#[derive(Serialize, Deserialize)]
-pub struct PersistedState {
-    pub collections: HashMap<String, CollectionData>,
-}
 
 pub trait PersistenceAdapter {
     fn save(&self, state: &PersistedState) -> Result<(), VectorDbError>;
     fn load(&self) -> Result<PersistedState, VectorDbError>;
 }
 
-pub struct FsPersistenceAdapter {
+#[derive(Serialize, Deserialize)]
+pub struct PersistedState {
+    pub collections: HashMap<String, CollectionData>,
+}
+
+pub struct FileSystemPersistenceAdapter {
     path: PathBuf,
 }
 
-impl FsPersistenceAdapter {
+impl FileSystemPersistenceAdapter {
     pub fn new(path: PathBuf) -> Self {
         Self { path }
     }
 }
 
-impl PersistenceAdapter for FsPersistenceAdapter {
+impl PersistenceAdapter for FileSystemPersistenceAdapter {
     fn save(&self, state: &PersistedState) -> Result<(), VectorDbError> {
         let encoded = bincode::serialize(state)
-            .map_err(|e| VectorDbError::PersistenceError(e.to_string()))?;
+            .map_err(|e| VectorDbError::PersistenceError(PersistenceError::Serialization(e)))?;
         std::fs::write(&self.path, encoded)
-            .map_err(|e| VectorDbError::PersistenceError(e.to_string()))?;
+            .map_err(|e| VectorDbError::PersistenceError(PersistenceError::FileOperation(e)))?;
         Ok(())
     }
 
     fn load(&self) -> Result<PersistedState, VectorDbError> {
-        let mut file = std::fs::File::open(&self.path)
-            .map_err(|e| VectorDbError::PersistenceError(e.to_string()))?;
-        let mut buf = Vec::new();
-        file.read_to_end(&mut buf)
-            .map_err(|e| VectorDbError::PersistenceError(e.to_string()))?;
+        let buf = std::fs::read(&self.path)
+            .map_err(|e| VectorDbError::PersistenceError(PersistenceError::FileOperation(e)))?;
         let decoded = bincode::deserialize(&buf)
-            .map_err(|e| VectorDbError::PersistenceError(e.to_string()))?;
+            .map_err(|e| VectorDbError::PersistenceError(PersistenceError::Deserialization(e)))?;
         Ok(decoded)
+    }
+}
+
+pub enum Persistence {
+    Filesystem(FileSystemPersistenceAdapter),
+}
+
+impl Persistence {
+    pub fn filesystem(path: PathBuf) -> Self {
+        Persistence::Filesystem(FileSystemPersistenceAdapter::new(path))
+    }
+
+    pub fn save(&self, state: &PersistedState) -> Result<(), VectorDbError> {
+        match self {
+            Persistence::Filesystem(adapter) => adapter.save(state),
+        }
+    }
+
+    pub fn load(&self) -> Result<PersistedState, VectorDbError> {
+        match self {
+            Persistence::Filesystem(adapter) => adapter.load(),
+        }
     }
 }

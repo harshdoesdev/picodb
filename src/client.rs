@@ -1,18 +1,18 @@
 use pikodb::{
     collection::{Collection, CollectionData},
     embedding::{EmbeddingType, Point},
-    error::VectorDbError,
-    persistence_adapter::{PersistedState, PersistenceAdapter},
+    error::{PersistenceError, VectorDbError},
+    persistence_adapter::{PersistedState, Persistence},
 };
 use std::collections::HashMap;
 
 pub struct ClientConfig {
-    pub persistence_adapter: Option<Box<dyn PersistenceAdapter>>,
+    pub persistence_adapter: Option<Persistence>,
 }
 
 pub struct Client {
     collections: HashMap<String, Collection>,
-    persistence_adapter: Option<Box<dyn PersistenceAdapter>>,
+    persistence_adapter: Option<Persistence>,
 }
 
 impl Client {
@@ -106,7 +106,7 @@ impl Client {
     fn persist(&self) -> Result<(), VectorDbError> {
         let Some(adapter) = &self.persistence_adapter else {
             return Err(VectorDbError::PersistenceError(
-                "No persistence adapter is configured.".to_string(),
+                PersistenceError::NotConfigured,
             ));
         };
 
