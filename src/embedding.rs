@@ -6,7 +6,6 @@ use uuid::Uuid;
 pub enum EmbeddingType {
     TextEmbedding3Small,
     TextEmbedding3Large,
-    Custom(usize),
 }
 
 impl EmbeddingType {
@@ -14,7 +13,6 @@ impl EmbeddingType {
         match self {
             Self::TextEmbedding3Small => 1536,
             Self::TextEmbedding3Large => 3072,
-            Self::Custom(dim) => *dim,
         }
     }
 }
