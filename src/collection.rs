@@ -4,18 +4,22 @@ use pikodb::{
     error::VectorDbError,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]
 pub struct CollectionData {
     pub embedding_type: EmbeddingType,
     pub dimension: usize,
     pub points: Vec<Point>,
+    pub id_to_index: HashMap<Uuid, usize>,
 }
 
 pub struct Collection {
     pub embedding_type: EmbeddingType,
     pub dimension: usize,
     pub points: Vec<Point>,
+    pub id_to_index: HashMap<Uuid, usize>,
     pub hnsw: Hnsw<'static, f32, DistCosine>,
 }
 
@@ -27,6 +31,7 @@ impl Collection {
             embedding_type,
             dimension,
             points: Vec::new(),
+            id_to_index: HashMap::new(),
             hnsw,
         }
     }
@@ -39,12 +44,13 @@ impl Collection {
             });
         }
 
-        if let Some(idx) = self.points.iter().position(|p| p.id == point.id) {
+        if let Some(&idx) = self.id_to_index.get(&point.id) {
             self.points[idx] = point.clone();
             self.hnsw.insert((&point.vector, idx));
         } else {
             let idx = self.points.len();
             self.points.push(point.clone());
+            self.id_to_index.insert(point.id, idx);
             self.hnsw.insert((&point.vector, idx));
         }
         Ok(())
@@ -56,5 +62,21 @@ impl Collection {
             .into_iter()
             .map(|Neighbour { d_id, .. }| self.points[d_id].clone())
             .collect()
+    }
+
+    pub fn from_data(data: CollectionData) -> Self {
+        let hnsw = Hnsw::new(16, 10_000, data.dimension, 200, DistCosine);
+
+        for (idx, point) in data.points.iter().enumerate() {
+            hnsw.insert((&point.vector, idx));
+        }
+
+        Self {
+            embedding_type: data.embedding_type,
+            dimension: data.dimension,
+            points: data.points,
+            id_to_index: data.id_to_index,
+            hnsw,
+        }
     }
 }

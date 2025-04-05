@@ -27,15 +27,7 @@ impl Client {
                 client.collections = state
                     .collections
                     .into_iter()
-                    .map(|(name, data)| {
-                        let mut collection = Collection::new(data.embedding_type.clone());
-                        collection.dimension = data.dimension;
-                        collection.points = data.points;
-                        for (i, point) in collection.points.iter().enumerate() {
-                            collection.hnsw.insert((&point.vector, i));
-                        }
-                        (name, collection)
-                    })
+                    .map(|(name, data)| (name, Collection::from_data(data)))
                     .collect();
             }
         }
@@ -121,6 +113,7 @@ impl Client {
                             embedding_type: coll.embedding_type.clone(),
                             dimension: coll.dimension,
                             points: coll.points.clone(),
+                            id_to_index: coll.id_to_index.clone(),
                         },
                     )
                 })
