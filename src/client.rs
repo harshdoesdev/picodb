@@ -116,7 +116,6 @@ impl Client {
                         name.clone(),
                         CollectionState {
                             data: CollectionData {
-                                dimension: coll.dimension,
                                 points: coll.points.clone(),
                                 id_to_index: coll.id_to_index.clone(),
                             },

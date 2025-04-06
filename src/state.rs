@@ -5,7 +5,6 @@ use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]
 pub struct CollectionData {
-    pub dimension: usize,
     pub points: Vec<Point>,
     pub id_to_index: HashMap<Uuid, usize>,
 }

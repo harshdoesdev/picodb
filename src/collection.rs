@@ -11,7 +11,6 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 pub struct Collection {
-    pub dimension: usize,
     pub points: Vec<Point>,
     pub id_to_index: HashMap<Uuid, usize>,
     pub hnsw: Hnsw<'static, f32, DistCosine>,
@@ -20,16 +19,14 @@ pub struct Collection {
 
 impl Collection {
     pub fn new(index_config: IndexConfig) -> Self {
-        let dimension = index_config.embedding_type.dimension();
         let hnsw = Hnsw::new(
             16,
             10_000,
-            dimension,
+            index_config.embedding_type.dimension(),
             index_config.build_quality.value(),
             DistCosine,
         );
         Self {
-            dimension,
             points: Vec::new(),
             id_to_index: HashMap::new(),
             hnsw,
@@ -38,9 +35,11 @@ impl Collection {
     }
 
     pub fn upsert(&mut self, point: Point) -> Result<(), VectorDbError> {
-        if point.vector.len() != self.dimension {
+        let dimension = self.index_config.embedding_type.dimension();
+        
+        if point.vector.len() != dimension {
             return Err(VectorDbError::DimensionMismatch {
-                expected: self.dimension,
+                expected: dimension,
                 actual: point.vector.len(),
             });
         }
@@ -101,12 +100,11 @@ impl Collection {
         let hnsw = Hnsw::new(
             16,
             10_000,
-            data.dimension,
+            index_config.embedding_type.dimension(),
             index_config.build_quality.value(),
             DistCosine,
         );
         let collection = Self {
-            dimension: data.dimension,
             points: data.points,
             id_to_index: data.id_to_index,
             hnsw,
