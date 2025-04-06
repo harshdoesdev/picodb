@@ -17,15 +17,17 @@ impl EmbeddingType {
     }
 }
 
+pub type Metadata = HashMap<String, String>;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Point {
     pub id: Uuid,
     pub vector: Vec<f32>,
-    pub metadata: HashMap<String, String>,
+    pub metadata: Option<Metadata>,
 }
 
 impl Point {
-    pub fn new(vector: Vec<f32>, metadata: HashMap<String, String>) -> Self {
+    pub fn new(vector: Vec<f32>, metadata: Option<Metadata>) -> Self {
         Self {
             id: Uuid::new_v4(),
             vector,
@@ -33,7 +35,7 @@ impl Point {
         }
     }
 
-    pub fn with_id(id: Uuid, vector: Vec<f32>, metadata: HashMap<String, String>) -> Self {
+    pub fn with_id(id: Uuid, vector: Vec<f32>, metadata: Option<Metadata>) -> Self {
         Self {
             id,
             vector,

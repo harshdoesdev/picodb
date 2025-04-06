@@ -79,9 +79,11 @@ impl Collection {
                 if filters.is_empty() {
                     true
                 } else {
-                    filters
-                        .iter()
-                        .any(|f| f.iter().all(|(k, v)| point.metadata.get(k) == Some(v)))
+                    filters.iter().any(|f| {
+                        f.iter().all(|(k, v)| {
+                            point.metadata.as_ref().is_some_and(|m| m.get(k) == Some(v))
+                        })
+                    })
                 }
             })
             .cloned()
