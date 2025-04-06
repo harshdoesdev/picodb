@@ -50,7 +50,6 @@ impl Client {
         }
         self.collections
             .insert(name.to_string(), Collection::new(index_config));
-        self.persist()?;
         Ok(())
     }
 
@@ -107,7 +106,7 @@ impl Client {
         self.query_with_filter(collection_name, query_vector, limit, ef, vec![])
     }
 
-    fn persist(&self) -> Result<(), VectorDbError> {
+    pub fn persist(&self) -> Result<(), VectorDbError> {
         let Some(adapter) = &self.persistence_adapter else {
             return Err(VectorDbError::PersistenceError(
                 PersistenceError::NotConfigured,
