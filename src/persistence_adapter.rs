@@ -1,6 +1,6 @@
 use pikodb::{
-    collection::CollectionData,
     error::{PersistenceError, VectorDbError},
+    state::CollectionState,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -13,7 +13,7 @@ pub trait PersistenceAdapter {
 
 #[derive(Serialize, Deserialize)]
 pub struct PersistedState {
-    pub collections: HashMap<String, CollectionData>,
+    pub collections: HashMap<String, CollectionState>,
 }
 
 pub struct FileSystemPersistenceAdapter {

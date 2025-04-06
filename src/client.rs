@@ -1,8 +1,11 @@
 use pikodb::{
-    collection::{Collection, CollectionData},
-    embedding::{EmbeddingType, Point},
+    collection::Collection,
+    embedding::Point,
     error::{PersistenceError, VectorDbError},
+    index::IndexConfig,
     persistence_adapter::{PersistedState, Persistence},
+    search::{EfSearch, MetadataFilter},
+    state::{CollectionData, CollectionState},
 };
 use std::collections::HashMap;
 
@@ -27,7 +30,7 @@ impl Client {
                 client.collections = state
                     .collections
                     .into_iter()
-                    .map(|(name, data)| (name, Collection::from_data(data)))
+                    .map(|(name, coll_state)| (name, Collection::from_state(coll_state)))
                     .collect();
             }
         }
@@ -37,13 +40,13 @@ impl Client {
     pub fn create_collection(
         &mut self,
         name: &str,
-        embedding_type: EmbeddingType,
+        index_config: IndexConfig,
     ) -> Result<(), VectorDbError> {
         if self.collections.contains_key(name) {
             return Ok(());
         }
         self.collections
-            .insert(name.to_string(), Collection::new(embedding_type));
+            .insert(name.to_string(), Collection::new(index_config));
         self.persist()?;
         Ok(())
     }
@@ -54,16 +57,6 @@ impl Client {
             .ok_or(VectorDbError::CollectionNotFound {
                 name: name.to_string(),
             })
-    }
-
-    pub fn get_or_create_collection(
-        &mut self,
-        name: &str,
-        embedding_type: EmbeddingType,
-    ) -> &mut Collection {
-        self.collections
-            .entry(name.to_string())
-            .or_insert_with(|| Collection::new(embedding_type))
     }
 
     pub fn upsert_points(
@@ -85,14 +78,26 @@ impl Client {
         Ok(())
     }
 
+    pub fn query_with_filter(
+        &self,
+        collection_name: &str,
+        query_vector: &[f32],
+        limit: usize,
+        ef: EfSearch,
+        filters: Vec<MetadataFilter>,
+    ) -> Result<Vec<Point>, VectorDbError> {
+        let collection = self.get_collection(collection_name)?;
+        Ok(collection.search_with_filter(query_vector, limit, ef, filters))
+    }
+
     pub fn query(
         &self,
         collection_name: &str,
         query_vector: &[f32],
         limit: usize,
+        ef: EfSearch,
     ) -> Result<Vec<Point>, VectorDbError> {
-        let collection = self.get_collection(collection_name)?;
-        Ok(collection.search(query_vector, limit))
+        self.query_with_filter(collection_name, query_vector, limit, ef, vec![])
     }
 
     fn persist(&self) -> Result<(), VectorDbError> {
@@ -109,11 +114,13 @@ impl Client {
                 .map(|(name, coll)| {
                     (
                         name.clone(),
-                        CollectionData {
-                            embedding_type: coll.embedding_type.clone(),
-                            dimension: coll.dimension,
-                            points: coll.points.clone(),
-                            id_to_index: coll.id_to_index.clone(),
+                        CollectionState {
+                            data: CollectionData {
+                                dimension: coll.dimension,
+                                points: coll.points.clone(),
+                                id_to_index: coll.id_to_index.clone(),
+                            },
+                            index_config: coll.index_config,
                         },
                     )
                 })

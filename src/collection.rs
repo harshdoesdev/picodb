@@ -1,38 +1,39 @@
 use hnsw_rs::prelude::*;
 use pikodb::{
-    embedding::{EmbeddingType, Point},
+    constants::DEFAULT_OVERFETCH_FACTOR,
+    embedding::Point,
     error::VectorDbError,
+    index::IndexConfig,
+    search::{EfSearch, MetadataFilter},
+    state::CollectionState,
 };
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 
-#[derive(Serialize, Deserialize)]
-pub struct CollectionData {
-    pub embedding_type: EmbeddingType,
-    pub dimension: usize,
-    pub points: Vec<Point>,
-    pub id_to_index: HashMap<Uuid, usize>,
-}
-
 pub struct Collection {
-    pub embedding_type: EmbeddingType,
     pub dimension: usize,
     pub points: Vec<Point>,
     pub id_to_index: HashMap<Uuid, usize>,
     pub hnsw: Hnsw<'static, f32, DistCosine>,
+    pub index_config: IndexConfig,
 }
 
 impl Collection {
-    pub fn new(embedding_type: EmbeddingType) -> Self {
-        let dimension = embedding_type.dimension();
-        let hnsw = Hnsw::new(16, 10_000, dimension, 200, DistCosine);
+    pub fn new(index_config: IndexConfig) -> Self {
+        let dimension = index_config.embedding_type.dimension();
+        let hnsw = Hnsw::new(
+            16,
+            10_000,
+            dimension,
+            index_config.build_quality.value(),
+            DistCosine,
+        );
         Self {
-            embedding_type,
             dimension,
             points: Vec::new(),
             id_to_index: HashMap::new(),
             hnsw,
+            index_config,
         }
     }
 
@@ -56,27 +57,64 @@ impl Collection {
         Ok(())
     }
 
-    pub fn search(&self, query: &[f32], limit: usize) -> Vec<Point> {
-        self.hnsw
-            .search(query, limit, 200)
+    pub fn search_with_filter(
+        &self,
+        query: &[f32],
+        limit: usize,
+        ef: EfSearch,
+        filters: Vec<MetadataFilter>,
+    ) -> Vec<Point> {
+        let fetch_limit = if filters.is_empty() {
+            limit
+        } else {
+            limit * DEFAULT_OVERFETCH_FACTOR
+        };
+
+        let candidates = self.hnsw.search(query, fetch_limit, ef.value());
+
+        // TODO: Add support for: lt, gt, full-text/fuzzy search filters
+        let filtered: Vec<_> = candidates
             .into_iter()
-            .map(|Neighbour { d_id, .. }| self.points[d_id].clone())
-            .collect()
+            .map(|Neighbour { d_id, .. }| &self.points[d_id])
+            .filter(|point| {
+                if filters.is_empty() {
+                    true
+                } else {
+                    filters
+                        .iter()
+                        .any(|f| f.iter().all(|(k, v)| point.metadata.get(k) == Some(v)))
+                }
+            })
+            .cloned()
+            .collect();
+
+        filtered.into_iter().take(limit).collect()
     }
 
-    pub fn from_data(data: CollectionData) -> Self {
-        let hnsw = Hnsw::new(16, 10_000, data.dimension, 200, DistCosine);
+    pub fn search(&self, query: &[f32], limit: usize, ef: EfSearch) -> Vec<Point> {
+        self.search_with_filter(query, limit, ef, vec![])
+    }
 
-        for (idx, point) in data.points.iter().enumerate() {
-            hnsw.insert((&point.vector, idx));
-        }
-
-        Self {
-            embedding_type: data.embedding_type,
+    pub fn from_state(state: CollectionState) -> Self {
+        let data = state.data;
+        let index_config = state.index_config;
+        let hnsw = Hnsw::new(
+            16,
+            10_000,
+            data.dimension,
+            index_config.build_quality.value(),
+            DistCosine,
+        );
+        let collection = Self {
             dimension: data.dimension,
             points: data.points,
             id_to_index: data.id_to_index,
             hnsw,
+            index_config,
+        };
+        for (idx, point) in collection.points.iter().enumerate() {
+            collection.hnsw.insert((&point.vector, idx));
         }
+        collection
     }
 }

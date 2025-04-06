@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum EmbeddingType {
     TextEmbedding3Small,
     TextEmbedding3Large,
@@ -21,23 +21,23 @@ impl EmbeddingType {
 pub struct Point {
     pub id: Uuid,
     pub vector: Vec<f32>,
-    pub payload: HashMap<String, String>,
+    pub metadata: HashMap<String, String>,
 }
 
 impl Point {
-    pub fn new(vector: Vec<f32>, payload: HashMap<String, String>) -> Self {
+    pub fn new(vector: Vec<f32>, metadata: HashMap<String, String>) -> Self {
         Self {
             id: Uuid::new_v4(),
             vector,
-            payload,
+            metadata,
         }
     }
 
-    pub fn with_id(id: Uuid, vector: Vec<f32>, payload: HashMap<String, String>) -> Self {
+    pub fn with_id(id: Uuid, vector: Vec<f32>, metadata: HashMap<String, String>) -> Self {
         Self {
             id,
             vector,
-            payload,
+            metadata,
         }
     }
 }
