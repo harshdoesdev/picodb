@@ -1,6 +1,6 @@
 [package]
 name = "pikodb"
-version = "0.0.15"
+version = "0.0.16"
 edition = "2021"
 authors = ["Harsh Singh <harshdoesdev@gmail.com>"]
 description = "A Pico-sized In-memory Vector Database"
