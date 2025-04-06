@@ -46,7 +46,7 @@ impl Client {
             return Ok(());
         }
         self.collections
-            .insert(name.to_string(), Collection::with_index_config(index_config));
+            .insert(name.to_string(), Collection::new(index_config));
         self.persist()?;
         Ok(())
     }
@@ -57,6 +57,17 @@ impl Client {
             .ok_or(VectorDbError::CollectionNotFound {
                 name: name.to_string(),
             })
+    }
+
+    pub fn get_or_create_collection(
+        &mut self,
+        name: &str,
+        index_config: IndexConfig,
+    ) -> Result<&Collection, VectorDbError> {
+        if !self.collections.contains_key(name) {
+            self.create_collection(name, index_config)?;
+        }
+        self.get_collection(name)
     }
 
     pub fn upsert_points(

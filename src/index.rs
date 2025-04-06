@@ -31,4 +31,29 @@ impl IndexConfig {
             embedding_type,
         }
     }
+
+    pub fn quick(embedding_type: EmbeddingType) -> Self {
+        Self {
+            build_quality: IndexBuildQuality::Quick,
+            embedding_type,
+        }
+    }
+
+    pub fn standard(embedding_type: EmbeddingType) -> Self {
+        Self {
+            build_quality: IndexBuildQuality::Standard,
+            embedding_type,
+        }
+    }
+
+    pub fn robust(embedding_type: EmbeddingType) -> Self {
+        Self {
+            build_quality: IndexBuildQuality::Robust,
+            embedding_type,
+        }
+    }
+
+    pub fn embedding_dimension(&self) -> usize {
+        self.embedding_type.dimension()
+    }
 }

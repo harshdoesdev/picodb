@@ -18,11 +18,11 @@ pub struct Collection {
 }
 
 impl Collection {
-    pub fn with_index_config(index_config: IndexConfig) -> Self {
+    pub fn new(index_config: IndexConfig) -> Self {
         let hnsw = Hnsw::new(
             16,
             10_000,
-            index_config.embedding_type.dimension(),
+            index_config.embedding_dimension(),
             index_config.build_quality.value(),
             DistCosine,
         );
@@ -35,7 +35,7 @@ impl Collection {
     }
 
     pub fn upsert(&mut self, point: Point) -> Result<(), VectorDbError> {
-        let dimension = self.index_config.embedding_type.dimension();
+        let dimension = self.index_config.embedding_dimension();
 
         if point.vector.len() != dimension {
             return Err(VectorDbError::DimensionMismatch {
@@ -100,7 +100,7 @@ impl Collection {
         let hnsw = Hnsw::new(
             16,
             10_000,
-            index_config.embedding_type.dimension(),
+            index_config.embedding_dimension(),
             index_config.build_quality.value(),
             DistCosine,
         );
