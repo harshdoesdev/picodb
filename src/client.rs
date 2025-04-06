@@ -54,9 +54,9 @@ impl Client {
         Ok(())
     }
 
-    pub fn get_collection(&self, name: &str) -> Result<&Collection, VectorDbError> {
+    pub fn get_collection(&mut self, name: &str) -> Result<&mut Collection, VectorDbError> {
         self.collections
-            .get(name)
+            .get_mut(name)
             .ok_or(VectorDbError::CollectionNotFound {
                 name: name.to_string(),
             })
@@ -66,7 +66,7 @@ impl Client {
         &mut self,
         name: &str,
         index_config: IndexConfig,
-    ) -> Result<&Collection, VectorDbError> {
+    ) -> Result<&mut Collection, VectorDbError> {
         if !self.collections.contains_key(name) {
             self.create_collection(name, index_config)?;
         }
@@ -78,13 +78,7 @@ impl Client {
         collection_name: &str,
         points: Vec<Point>,
     ) -> Result<(), VectorDbError> {
-        let collection =
-            self.collections
-                .get_mut(collection_name)
-                .ok_or(VectorDbError::CollectionNotFound {
-                    name: collection_name.to_string(),
-                })?;
-
+        let collection = self.get_collection(collection_name)?;
         for point in points {
             collection.upsert(point)?;
         }
@@ -93,7 +87,7 @@ impl Client {
     }
 
     pub fn query_with_filter(
-        &self,
+        &mut self,
         collection_name: &str,
         query_vector: &[f32],
         limit: usize,
@@ -105,7 +99,7 @@ impl Client {
     }
 
     pub fn query(
-        &self,
+        &mut self,
         collection_name: &str,
         query_vector: &[f32],
         limit: usize,
