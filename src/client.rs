@@ -7,34 +7,37 @@ use pikodb::{
     search::{EfSearch, MetadataFilter},
     state::{CollectionData, CollectionState},
 };
-use std::collections::HashMap;
+
+pub type CollectionMap = std::collections::HashMap<String, Collection>;
 
 pub struct ClientConfig {
     pub persistence_adapter: Option<Persistence>,
 }
 
 pub struct Client {
-    collections: HashMap<String, Collection>,
+    collections: CollectionMap,
     persistence_adapter: Option<Persistence>,
 }
 
 impl Client {
-    pub fn new(config: ClientConfig) -> Self {
-        let mut client = Self {
-            collections: HashMap::new(),
-            persistence_adapter: config.persistence_adapter,
-        };
-
-        if let Some(adapter) = &client.persistence_adapter {
-            if let Ok(state) = adapter.load() {
-                client.collections = state
-                    .collections
-                    .into_iter()
-                    .map(|(name, coll_state)| (name, Collection::from_state(coll_state)))
-                    .collect();
-            }
+    pub fn in_memory() -> Self {
+        Self {
+            collections: CollectionMap::new(),
+            persistence_adapter: None,
         }
-        client
+    }
+
+    pub fn persistent(adapter: Persistence) -> Result<Self, VectorDbError> {
+        let state = adapter.load()?;
+        let collections = state
+            .collections
+            .into_iter()
+            .map(|(name, coll_state)| (name, Collection::from_state(coll_state)))
+            .collect();
+        Ok(Self {
+            collections,
+            persistence_adapter: Some(adapter),
+        })
     }
 
     pub fn create_collection(
