@@ -427,7 +427,7 @@ dependencies = [
 
 [[package]]
 name = "pikodb"
-version = "0.0.14"
+version = "0.0.15"
 dependencies = [
  "bincode",
  "hnsw_rs",
