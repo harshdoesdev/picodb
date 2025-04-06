@@ -82,7 +82,6 @@ impl Client {
         for point in points {
             collection.upsert(point)?;
         }
-        self.persist()?;
         Ok(())
     }
 
