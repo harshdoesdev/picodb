@@ -46,7 +46,7 @@ impl Client {
             return Ok(());
         }
         self.collections
-            .insert(name.to_string(), Collection::new(index_config));
+            .insert(name.to_string(), Collection::with_index_config(index_config));
         self.persist()?;
         Ok(())
     }
